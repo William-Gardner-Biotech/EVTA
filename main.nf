@@ -13,6 +13,7 @@ log.info """
 8 8888               `8.`8'               8 8888 .888888888. `88888.  
 8 888888888888        `8.`                8 8888.8'       `8. `88888. 
 
+
 """.stripIndent()
 
 workflow {
@@ -49,9 +50,18 @@ workflow {
         ASSEMBLE_INOC.out
     )
 
-    BUILD_snpEff_DB (
+    LIFT_GFF (
         GENERATE_T1_CONSENSUS.out
     )
+
+    if (params.snp_eff_db_exists == false) {
+            MAKE_SNPEFF_DB (
+        LIFT_GFF.out
+        )
+    }
+
+
+
 
     // USE Annotation Transfer Tool to transfer annotation to new consensus genomes
 
@@ -182,7 +192,10 @@ process GENERATE_T1_CONSENSUS {
     """
 }
 
-process BUILD_snpEff_DB {
+// process that will take ref GFF and ref fasta then compare new consensus to shift the annotations
+process LIFT_GFF {
+
+    publishDir "GFF_lift", mode: 'Copy'
 
     tag "${specimen}"
 
@@ -190,7 +203,7 @@ process BUILD_snpEff_DB {
     tuple val(specimen), path(timepoint_2), path(t1_Consensus)
 
     output:
-    tuple val(specimen), path(snpEff_db)
+    tuple val(specimen), path(timepoint_2), path(t1_Consensus), path("${specimen}.gff3")
 
     script:
 
@@ -198,9 +211,25 @@ process BUILD_snpEff_DB {
     liftoff -g ${params.ref_GFF} -o ${specimen}.gff3 ${t1_Consensus} ${params.ref_fasta}
     """
 }
-/*
+
+// process that needs to be run once for the sake of making a snpEff database to call upon
+// If you run it multiple times it will have collision errors
+// TODO make this smarter
+process MAKE_SNPEFF_DB {
+        tag "${specimen}"
+
+    input:
+    tuple val(specimen), path(timepoint_2), path(t1_Consensus), path(consensus_gff)
+
+    output:
+    val specimen
+
+    script:
+
+    """
+
     # Make the database now
-    echo "# ${specimen} genome\n${specimen}.genome: ${specimen}" >> ${params.snpEff_folder}/snpEff.config"
+    echo "\n# ${specimen} genome\n${specimen}.genome: ${specimen}" >> ${params.snpEff_folder}/snpEff.config
     mkdir ${params.snpEff_folder}/data/${specimen}
     cp ${t1_Consensus} ${params.snpEff_folder}/data/${specimen}/sequences.fa
     cp ${specimen}.gff3 ${params.snpEff_folder}/data/${specimen}/genes.gff
@@ -209,4 +238,3 @@ process BUILD_snpEff_DB {
     java -jar ${params.snpEff_folder}/snpEff.jar build -gff3 -noCheckCds -noCheckProtein -v ${specimen}
     """
 }
-*/
