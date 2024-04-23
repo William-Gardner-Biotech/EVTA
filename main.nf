@@ -1,5 +1,20 @@
 nextflow.enable.dsl=2
 
+log.info """
+                                                                      
+8 8888888888 `8.`888b           ,8' 8888888 8888888888   .8.          
+8 8888        `8.`888b         ,8'        8 8888        .888.         
+8 8888         `8.`888b       ,8'         8 8888       :88888.        
+8 8888          `8.`888b     ,8'          8 8888      . `88888.       
+8 888888888888   `8.`888b   ,8'           8 8888     .8. `88888.      
+8 8888            `8.`888b ,8'            8 8888    .8`8. `88888.     
+8 8888             `8.`888b8'             8 8888   .8' `8. `88888.    
+8 8888              `8.`888'              8 8888  .8'   `8. `88888.   
+8 8888               `8.`8'               8 8888 .888888888. `88888.  
+8 888888888888        `8.`                8 8888.8'       `8. `88888. 
+
+""".stripIndent()
+
 workflow {
 
     ch_fastqs_raw = Channel
@@ -32,6 +47,10 @@ workflow {
     GENERATE_T1_CONSENSUS (
         grouped_ch,
         ASSEMBLE_INOC.out
+    )
+
+    BUILD_snpEff_DB (
+        GENERATE_T1_CONSENSUS.out
     )
 
     // USE Annotation Transfer Tool to transfer annotation to new consensus genomes
@@ -140,7 +159,7 @@ process GENERATE_T1_CONSENSUS {
     each path(inocolum)
 
     output:
-    tuple val(specimen), path(T2), path("${specimen}.fa")
+    tuple val(specimen), path(timepoint2), path("${specimen}.fa")
 
     script:
 
@@ -168,7 +187,7 @@ process BUILD_snpEff_DB {
     tag "${specimen}"
 
     input:
-    tuple val(specimen), path(T2), path(t1_Consensus)
+    tuple val(specimen), path(timepoint_2), path(t1_Consensus)
 
     output:
     tuple val(specimen), path(snpEff_db)
@@ -177,9 +196,11 @@ process BUILD_snpEff_DB {
 
     """
     liftoff -g ${params.ref_GFF} -o ${specimen}.gff3 ${t1_Consensus} ${params.ref_fasta}
-
+    """
+}
+/*
     # Make the database now
-    echo "# ${specimen} genome\n${specimen}.genome: ${specimen}" >> ${params.snpEff_folder}/snpEff.config
+    echo "# ${specimen} genome\n${specimen}.genome: ${specimen}" >> ${params.snpEff_folder}/snpEff.config"
     mkdir ${params.snpEff_folder}/data/${specimen}
     cp ${t1_Consensus} ${params.snpEff_folder}/data/${specimen}/sequences.fa
     cp ${specimen}.gff3 ${params.snpEff_folder}/data/${specimen}/genes.gff
@@ -188,3 +209,4 @@ process BUILD_snpEff_DB {
     java -jar ${params.snpEff_folder}/snpEff.jar build -gff3 -noCheckCds -noCheckProtein -v ${specimen}
     """
 }
+*/
