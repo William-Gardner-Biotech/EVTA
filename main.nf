@@ -142,17 +142,22 @@ process GENERATE_T1_CONSENSUS {
     output:
     tuple val(specimen), path(T2), path("${specimen}.fa")
 
+    script:
+
     // if the sample number for T1 is larger than T2 then we need to swap the vars for timewise comparison
     if (T1.getSimpleName().tokenize('-')[1] > T2.getSimpleName().tokenize('-')[1]) {
-        def temp = T1
-        T1 = T2
-        T2 = temp
+        timepoint1 = T2
+        timepoint2 = T1
+    }
+    else {
+        timepoint1 = T1
+        timepoint2 = T2
     }
 
     """
-    echo ${T1} | ${T2}
-    bbduk.sh -Xmx8g in=${T1} out=QC_${T1} minlen=100 hdist=2 ftm=5 maq=10
-    bbmap.sh -Xmx8g ref=${params.ref_fasta} in=QC_${T1} out=${specimen}.bam maxindel=100 minid=0.9
+    echo "${timepoint1} | ${timepoint2}"
+    bbduk.sh -Xmx8g in=${timepoint1} out=QC_${timepoint1} minlen=100 hdist=2 ftm=5 maq=10
+    bbmap.sh -Xmx8g ref=${params.ref_fasta} in=QC_${timepoint1} out=${specimen}.bam maxindel=100 minid=0.9
     samtools sort -o sorted_${specimen}.bam -l 1 ${specimen}.bam
     samtools mpileup sorted_${specimen}.bam | ivar consensus -p ${specimen}
     """
