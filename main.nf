@@ -56,9 +56,13 @@ workflow {
 
     if (params.snp_eff_db_exists == false) {
             MAKE_SNPEFF_DB (
-        LIFT_GFF.out
-        )
+                LIFT_GFF.out
+                )
     }
+
+    MAP_SECOND_TIMEPOINT (
+        LIFT_GFF.out
+    )
 
 
 
@@ -216,7 +220,8 @@ process LIFT_GFF {
 // If you run it multiple times it will have collision errors
 // TODO make this smarter
 process MAKE_SNPEFF_DB {
-        tag "${specimen}"
+
+    tag "${specimen}"
 
     input:
     tuple val(specimen), path(timepoint_2), path(t1_Consensus), path(consensus_gff)
@@ -238,3 +243,67 @@ process MAKE_SNPEFF_DB {
     java -jar ${params.snpEff_folder}/snpEff.jar build -gff3 -noCheckCds -noCheckProtein -v ${specimen}
     """
 }
+
+// Also mapping the amp3 primers we care about to use bcftools subtract
+process MAP_SECOND_TIMEPOINT {
+
+    tag "${specimen}"
+
+    publishDir "SecondBam", mode: 'symlink'
+
+    input:
+    tuple val(specimen), path(timepoint_2), path(t1_Consensus), path(consensus_gff)
+
+    output:
+    tuple val(specimen), path("${specimen}_vcf_callable.bed"), path(t1_Consensus), path(consensus_gff)
+
+    // Mapping portion that also removes the amplicon regions not represented by all samples (specified in amp_primers.fa)
+    // Then it maps and removes the barcode region from the bam file and converts all the way back to a final bam file.
+    script:
+    """
+    # Map the amp primers so we can subtract down full bam
+    bbmap.sh ref=${t1_Consensus} in=${params.amp_primers} out=mapped_primers.bam
+    bedtools bamtobed -i mapped_primers.bam > mapped_primers.bed
+
+    awk 'BEGIN {OFS="\t"} NR==1 {chr=\$1; start=\$2; name1=\$4; score1=\$5; strand=\$6} END {print chr "\t" start "\t" \$3 "\t" name1 "\t" score1 "\t" strand}' mapped_primers.bed > primer_amplicon.bed
+
+    # Map the second timepoint reads against time1 consensus
+    bbduk.sh -Xmx8g in=${timepoint_2} out=QC_${timepoint_2} minlen=100 hdist=2 ftm=5 maq=10
+    bbmap.sh -Xmx8g ref=${t1_Consensus} in=QC_${timepoint_2} out=${specimen}_full.bam maxindel=100 minid=0.9
+
+    # Subtract the reads outside the primer region
+    bedtools bamtobed -i ${specimen}_full.bam > ${specimen}_full.bed
+    bedtools intersect -a ${specimen}_full.bed -b primer_amplicon.bed > ${specimen}_shrunk.bed
+
+    # Remove the barcode region
+    awk '\$3 == "gene" && (\$9 ~ /vpr/ || \$9 ~ /vpx/)' ${consensus_gff} | awk '{print \$1, \$4, \$5, \$7}' > vpr_vpx_coords.txt
+
+    # awk will then search for vpr-vpx gene region and print it into a bed file.
+    # It also adds a 15 bp flank to each side to remove some mapping errors near the region
+    awk 'NR==1 {vpr_start=\$2; vpr_end=\$3; vpr_strand=\$4; next} 
+        NR==2 {vpx_start=\$2; vpx_end=\$3; vpx_strand=\$4; 
+                if (vpx_strand == "+") {
+                    start = vpr_end + 1 - 15;
+                    end = vpx_start - 1 + 15;
+                    print \$1 "\t" start "\t" end "\t" vpx_strand
+                } else {
+                    start = vpx_end + 1 - 15;
+                    end = vpr_start - 1 + 15;
+                    print \$1 "\t" start "\t" end "\t" vpr_strand
+                }
+        }' vpr_vpx_coords.txt > between_vpr_vpx.bed
+
+    bedtools subtract -a ${specimen}_shrunk.bed -b between_vpr_vpx.bed > ${specimen}_vcf_callable.bed
+
+    # Convert bed file to bam, take reference and make a .genome file
+    samtools faidx ${t1_Consensus}
+    awk -v OFS='\t' {'print \$1,\$2'} ${t1_Consensus}.fai > ${specimen}_genome.txt
+    bedtools bedtobam -i ${specimen}_vcf_callable.bed -g ${specimen}_genome.txt > ${specimen}_vcf_callable.bam
+    """
+}
+
+/*
+We need to subtract the barcode region from the bam file, and 15 bp upstream and down from that. We can use the gff file to find it as it lies
+betweem vpx and vpr genes. 
+cy0661 only got amplicon 3 so we need to filter all vcf's down to that region.
+*/
