@@ -51,9 +51,10 @@ workflow {
     )
 
     LIFT_GFF (
-        GENERATE_T1_CONSENSUS.out
+        GENERATE_T1_CONSENSUS.out.t2_vs_t1
     )
 
+    // DEPRECATED 24Apr24
     if (params.snp_eff_db_exists == false) {
             MAKE_SNPEFF_DB (
                 LIFT_GFF.out
@@ -68,18 +69,22 @@ workflow {
         MAP_SECOND_TIMEPOINT.out
     )
 
+    if (params.var_t1 == true) {
+
+        LIFT_GFF_to_INOC (
+            ASSEMBLE_INOC.out
+        )
+
+        MAP_FIRST_TIMEPOINT_VS_INOC (
+            GENERATE_T1_CONSENSUS.out.t1_vs_inoc,
+            ASSEMBLE_INOC.out,
+            LIFT_GFF_to_INOC.out
+        )
 
 
-    // USE Annotation Transfer Tool to transfer annotation to new consensus genomes
 
-    // Make snpEff database to reference
-    // Use the snpEff build -noCheckCds -noCheckProtein
+    }
 
-    // Call variants using SNPeff
-    
-    // Count synonymous vs non and return the data
-
-    // QC the reads with decent strictness before variant calling
 
 
 }
@@ -134,36 +139,6 @@ process ASSEMBLE_INOC {
 
 }
 
-// This process will take the timepoint pair channel and then match the corresponding merged reads with it
-process CROSS_CHANNELS {
-    input:
-    tuple val(specimen), val(T1), val(T2)
-    tuple val(sampleID), path(merged_fastq)
-
-    output:
-    tuple val(specimen), path(matched_read1), path(matched_read2)
-
-    script:
-    read1_name = T1
-    read2_name = T2
-
-    matched_read1 = merged_fastq.findAll { it.getName()
-    .startsWith(read1_name)
-    }
-    matched_read2 = merged_fastq.findAll { it.getName()
-    .startsWith(read2_name)
-    }
-
-    if (matched_read1.size() == 1 && matched_read2.size() == 1) {
-        """
-        echo "${specimen} $matched_read1 $matched_read2"
-        """
-    } else {
-        println "Skipping ${specimen} as one or both files could not be matched uniquely."
-    }
-
-}
-
 process GENERATE_T1_CONSENSUS {
 
     tag "${specimen}"
@@ -176,7 +151,8 @@ process GENERATE_T1_CONSENSUS {
     each path(inocolum)
 
     output:
-    tuple val(specimen), path(timepoint2), path("${specimen}.fa")
+    tuple val(specimen), path(timepoint2), path("${specimen}.fa"), emit: t2_vs_t1
+    tuple val(specimen), path(timepoint1), emit: t1_vs_inoc
 
     script:
 
@@ -219,9 +195,79 @@ process LIFT_GFF {
     """
 }
 
+// process that will take ref GFF and ref fasta then compare new consensus to shift the annotations
+// Used on the first timepoint vs inoc
+process LIFT_GFF_to_INOC {
+
+    publishDir "GFF_INOC", mode: 'Copy'
+
+    tag "${specimen}"
+
+    input:
+    path inoc
+
+    output:
+    path "INOC.gff3"
+
+    script:
+
+    """
+    liftoff -g ${params.ref_GFF} -o INOC.gff3 ${inoc} ${params.ref_fasta}
+    """
+}
+
+// Also mapping the amp3 primers we care about to use bcftools subtract
+process MAP_FIRST_TIMEPOINT_VS_INOC {
+
+    tag "${specimen}"
+
+    publishDir "FIRST_SNPs", mode: 'Copy'
+
+    input:
+    tuple val(specimen), path(timepoint_1)
+    each path(inoc_consensus)
+    each path(inoc_gff)
+
+    output:
+    tuple val(specimen), path("${specimen}_t1.tsv"), path("${specimen}_t1_vcf_callable.bam")
+
+    // Mapping portion that also removes the amplicon regions not represented by all samples (specified in amp_primers.fa)
+    // Then it maps and removes the barcode region from the bam file and converts all the way back to a final bam file.
+    script:
+    """
+
+    # Map the first timepoint reads against inoc consensus
+    bbduk.sh -Xmx8g in=${timepoint_1} out=QC_${timepoint_1} minlen=100 hdist=2 ftm=5 maq=10
+    bbmap.sh -Xmx8g ref=${inoc_consensus} in=QC_${timepoint_1} out=${specimen}_t1_full.bam maxindel=100 minid=0.9
+
+    # Remove the barcode region
+    awk '\$3 == "gene" && (\$9 ~ /vpr/ || \$9 ~ /vpx/)' ${inoc_gff} | awk '{print \$1, \$4, \$5, \$7}' > vpr_vpx_coords.txt
+
+    # awk will then search for vpr-vpx gene region and print it into a bed file.
+    # It also adds a 15 bp flank to each side to remove some mapping errors near the region
+    awk 'NR==1 {vpr_start=\$2; vpr_end=\$3; vpr_strand=\$4; next} 
+        NR==2 {vpx_start=\$2; vpx_end=\$3; vpx_strand=\$4; 
+                if (vpx_strand == "+") {
+                    start = vpr_end + 1 - 15;
+                    end = vpx_start - 1 + 15;
+                    print \$1 "\t" start "\t" end "\t" vpx_strand
+                } else {
+                    start = vpx_end + 1 - 15;
+                    end = vpr_start - 1 + 15;
+                    print \$1 "\t" start "\t" end "\t" vpr_strand
+                }
+        }' vpr_vpx_coords.txt > between_vpr_vpx.bed
+
+    bedtools subtract -a ${specimen}_t1_full.bam -b between_vpr_vpx.bed -A > ${specimen}_t1_vcf_callable.bam 
+
+    samtools sort -o sorted_t1_${specimen}.bam -l 1 ${specimen}_t1_vcf_callable.bam
+    samtools mpileup sorted_t1_${specimen}.bam | ivar variants -r ${inoc_consensus} -p ${specimen}_t1 -g ${inoc_gff} -m 50
+    """
+}
+
 // process that needs to be run once for the sake of making a snpEff database to call upon
 // If you run it multiple times it will have collision errors
-// TODO make this smarter
+// DEPRECATED
 process MAKE_SNPEFF_DB {
 
     tag "${specimen}"
@@ -277,7 +323,7 @@ process MAP_SECOND_TIMEPOINT {
     # Subtract the reads outside the primer region
     # bedtools bamtobed -i ${specimen}_full.bam > ${specimen}_full.bed
     ###################################################################################################
-    # bedtools intersect -a ${specimen}_full.bam -b primer_amplicon.bed > ${specimen}_shrunk.bam
+    bedtools intersect -a ${specimen}_full.bam -b primer_amplicon.bed > ${specimen}_shrunk.bam
     # ################### ^^ Line is important for filtering down to single amplicon ^^ ###############
 
     # Remove the barcode region
@@ -298,7 +344,7 @@ process MAP_SECOND_TIMEPOINT {
                 }
         }' vpr_vpx_coords.txt > between_vpr_vpx.bed
 
-    bedtools subtract -a ${specimen}_full.bam -b between_vpr_vpx.bed -A > ${specimen}_vcf_callable.bam 
+    bedtools subtract -a ${specimen}_shrunk.bam -b between_vpr_vpx.bed -A > ${specimen}_vcf_callable.bam 
     """
 }
 
