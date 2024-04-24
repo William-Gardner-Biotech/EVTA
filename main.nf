@@ -64,6 +64,9 @@ workflow {
         LIFT_GFF.out
     )
 
+    CALL_VARIANTS (
+        MAP_SECOND_TIMEPOINT.out
+    )
 
 
 
@@ -249,13 +252,13 @@ process MAP_SECOND_TIMEPOINT {
 
     tag "${specimen}"
 
-    publishDir "SecondBam", mode: 'symlink'
+    publishDir "SecondBam", mode: 'Copy'
 
     input:
     tuple val(specimen), path(timepoint_2), path(t1_Consensus), path(consensus_gff)
 
     output:
-    tuple val(specimen), path("${specimen}_vcf_callable.bed"), path(t1_Consensus), path(consensus_gff)
+    tuple val(specimen), path("${specimen}_vcf_callable.bam"), path(t1_Consensus), path(consensus_gff)
 
     // Mapping portion that also removes the amplicon regions not represented by all samples (specified in amp_primers.fa)
     // Then it maps and removes the barcode region from the bam file and converts all the way back to a final bam file.
@@ -272,8 +275,10 @@ process MAP_SECOND_TIMEPOINT {
     bbmap.sh -Xmx8g ref=${t1_Consensus} in=QC_${timepoint_2} out=${specimen}_full.bam maxindel=100 minid=0.9
 
     # Subtract the reads outside the primer region
-    bedtools bamtobed -i ${specimen}_full.bam > ${specimen}_full.bed
-    bedtools intersect -a ${specimen}_full.bed -b primer_amplicon.bed > ${specimen}_shrunk.bed
+    # bedtools bamtobed -i ${specimen}_full.bam > ${specimen}_full.bed
+    ###################################################################################################
+    # bedtools intersect -a ${specimen}_full.bam -b primer_amplicon.bed > ${specimen}_shrunk.bam
+    # ################### ^^ Line is important for filtering down to single amplicon ^^ ###############
 
     # Remove the barcode region
     awk '\$3 == "gene" && (\$9 ~ /vpr/ || \$9 ~ /vpx/)' ${consensus_gff} | awk '{print \$1, \$4, \$5, \$7}' > vpr_vpx_coords.txt
@@ -293,12 +298,26 @@ process MAP_SECOND_TIMEPOINT {
                 }
         }' vpr_vpx_coords.txt > between_vpr_vpx.bed
 
-    bedtools subtract -a ${specimen}_shrunk.bed -b between_vpr_vpx.bed > ${specimen}_vcf_callable.bed
+    bedtools subtract -a ${specimen}_full.bam -b between_vpr_vpx.bed -A > ${specimen}_vcf_callable.bam 
+    """
+}
 
-    # Convert bed file to bam, take reference and make a .genome file
-    samtools faidx ${t1_Consensus}
-    awk -v OFS='\t' {'print \$1,\$2'} ${t1_Consensus}.fai > ${specimen}_genome.txt
-    bedtools bedtobam -i ${specimen}_vcf_callable.bed -g ${specimen}_genome.txt > ${specimen}_vcf_callable.bam
+process CALL_VARIANTS {
+
+    tag "${specimen}"
+
+    input:
+    tuple val(specimen), path(callable_bam), path(t1_Consensus), path(consensus_gff)
+
+    output:
+    tuple val(specimen), path("${specimen}.tsv"), path(t1_Consensus), path(consensus_gff)
+
+    publishDir "Final_tsv_SNPs", mode: 'Copy'
+
+    script:
+    """
+    samtools sort -o sorted_${callable_bam} -l 1 ${callable_bam}
+    samtools mpileup sorted_${callable_bam} | ivar variants -r ${t1_Consensus} -p ${specimen} -g ${consensus_gff} -m 10
     """
 }
 
