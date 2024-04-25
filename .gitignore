@@ -1,0 +1,12 @@
+# Ignore everything
+*
+
+# Don't ignore these folders and files
+!data/
+!main.nf
+!.gitignore
+!.nextflow.config
+!ref/
+
+# Ignore Nextflow logs
+.nextflow.log*
