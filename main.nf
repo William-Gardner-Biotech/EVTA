@@ -54,13 +54,6 @@ workflow {
         GENERATE_T1_CONSENSUS.out.t2_vs_t1
     )
 
-    // DEPRECATED 24Apr24
-    if (params.snp_eff_db_exists == false) {
-            MAKE_SNPEFF_DB (
-                LIFT_GFF.out
-                )
-    }
-
     MAP_SECOND_TIMEPOINT (
         LIFT_GFF.out
     )
@@ -262,34 +255,6 @@ process MAP_FIRST_TIMEPOINT_VS_INOC {
 
     samtools sort -o sorted_t1_${specimen}.bam -l 1 ${specimen}_t1_vcf_callable.bam
     samtools mpileup sorted_t1_${specimen}.bam | ivar variants -r ${inoc_consensus} -p ${specimen}_t1 -g ${inoc_gff} -m 50
-    """
-}
-
-// process that needs to be run once for the sake of making a snpEff database to call upon
-// If you run it multiple times it will have collision errors
-// DEPRECATED
-process MAKE_SNPEFF_DB {
-
-    tag "${specimen}"
-
-    input:
-    tuple val(specimen), path(timepoint_2), path(t1_Consensus), path(consensus_gff)
-
-    output:
-    val specimen
-
-    script:
-
-    """
-
-    # Make the database now
-    echo "\n# ${specimen} genome\n${specimen}.genome: ${specimen}" >> ${params.snpEff_folder}/snpEff.config
-    mkdir ${params.snpEff_folder}/data/${specimen}
-    cp ${t1_Consensus} ${params.snpEff_folder}/data/${specimen}/sequences.fa
-    cp ${specimen}.gff3 ${params.snpEff_folder}/data/${specimen}/genes.gff
-
-    # Build the database with snpEff
-    java -jar ${params.snpEff_folder}/snpEff.jar build -gff3 -noCheckCds -noCheckProtein -v ${specimen}
     """
 }
 
