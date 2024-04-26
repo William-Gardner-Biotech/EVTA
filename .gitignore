@@ -1,12 +1,32 @@
-# Ignore everything
-*
-
-# Don't ignore these folders and files
-!data/
-!main.nf
-!.gitignore
-!.nextflow.config
-!ref/
-
-# Ignore Nextflow logs
+# Ignore Nextflow logs and caches
 .nextflow.log*
+.nextflow
+work
+
+# Ignore DS_Store
+.DS_Store
+
+# Ignore output folder
+EVTA_output
+
+# Ignore GFF folders
+GFF_*
+
+# Ignore all process publishDirs
+INOC
+Merged
+T1_Consensus
+T2_BAMs
+bkup_data
+
+# Ignore git files
+github
+
+# Ignore all ref files but our SIVmac239
+ref/
+!ref/SIVmac239*
+!ref/amp3_primers.fa
+
+# Include nextflow script files
+!main.nf
+!nextflow.config
