@@ -1,0 +1,43 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region M33262.1 1 10535
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=11723
+M33262.1	Genbank	region	1	10535	.	+	.	ID=M33262.1:1..10535;Dbxref=taxon:11723;gb-acronym=SIV;gbkey=Src;isolate=239;mol_type=genomic RNA
+M33262.1	Genbank	long_terminal_repeat	257	1074	.	+	.	ID=id-M33262.1:257..1074;Note=5'LTR;gbkey=LTR
+M33262.1	Genbank	long_terminal_repeat	257	773	.	+	.	ID=id-M33262.1:257..773;Note=U3;gbkey=LTR
+M33262.1	Genbank	repeat_region	774	950	.	+	.	ID=id-M33262.1:774..950;Note=R;gbkey=repeat_region
+M33262.1	Genbank	sequence_feature	775	775	.	+	.	ID=id-M33262.1:775..775;Note=mRNA start (putative)%3B putative;gbkey=misc_feature
+M33262.1	Genbank	long_terminal_repeat	951	1074	.	+	.	ID=id-M33262.1:951..1074;Note=U5;gbkey=LTR
+M33262.1	Genbank	gene	1309	2841	.	+	.	ID=gene-gag;Name=gag;gbkey=Gene;gene=gag;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	1309	2841	.	+	0	ID=cds-AAA47632.1;Parent=gene-gag;Dbxref=NCBI_GP:AAA47632.1;Name=AAA47632.1;gbkey=CDS;gene=gag;product=gag polyprotein;protein_id=AAA47632.1
+M33262.1	Genbank	gene	2484	5666	.	+	.	ID=gene-pol;Name=pol;gbkey=Gene;gene=pol;gene_biotype=protein_coding;partial=true;start_range=.,2484
+M33262.1	Genbank	CDS	2484	5666	.	+	0	ID=cds-AAA47633.2;Parent=gene-pol;Dbxref=NCBI_GP:AAA47633.2;Name=AAA47633.2;gbkey=CDS;gene=pol;partial=true;product=pol polyprotein;protein_id=AAA47633.2;start_range=.,2484
+M33262.1	Genbank	sequence_feature	5340	5355	.	+	.	ID=id-pol;Note=polypurine tract;gbkey=misc_feature;gene=pol
+M33262.1	Genbank	gene	5596	6240	.	+	.	ID=gene-vif;Name=vif;gbkey=Gene;gene=vif;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	5596	6240	.	+	0	ID=cds-AAA47634.1;Parent=gene-vif;Dbxref=NCBI_GP:AAA47634.1;Name=AAA47634.1;gbkey=CDS;gene=vif;product=vif protein;protein_id=AAA47634.1
+M33262.1	Genbank	gene	6068	6406	.	+	.	ID=gene-vpx;Name=vpx;gbkey=Gene;gene=vpx;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	6068	6406	.	+	0	ID=cds-AAA47635.1;Parent=gene-vpx;Dbxref=NCBI_GP:AAA47635.1;Name=AAA47635.1;gbkey=CDS;gene=vpx;product=vpX protein;protein_id=AAA47635.1
+M33262.1	Genbank	gene	6407	6712	.	+	.	ID=gene-vpr;Name=vpr;gbkey=Gene;gene=vpr;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	6407	6712	.	+	0	ID=cds-AAA47636.1;Parent=gene-vpr;Dbxref=NCBI_GP:AAA47636.1;Name=AAA47636.1;gbkey=CDS;gene=vpr;product=vpR protein;protein_id=AAA47636.1
+M33262.1	Genbank	gene	6558	9158	.	+	.	ID=gene-tat;Name=tat;gbkey=Gene;gene=tat;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	6558	6853	.	+	0	ID=cds-AAA47630.1;Parent=gene-tat;Dbxref=NCBI_GP:AAA47630.1;Name=AAA47630.1;gbkey=CDS;gene=tat;product=tat protein;protein_id=AAA47630.1
+M33262.1	Genbank	CDS	9062	9158	.	+	1	ID=cds-AAA47630.1;Parent=gene-tat;Dbxref=NCBI_GP:AAA47630.1;Name=AAA47630.1;gbkey=CDS;gene=tat;product=tat protein;protein_id=AAA47630.1
+M33262.1	Genbank	exon	6558	6853	.	+	.	ID=id-tat-2;Parent=gene-tat;Note=tat protein%2C  (first expressed exon);exon_number=2;gbkey=exon;gene=tat;number=2
+M33262.1	Genbank	gene	6784	9315	.	+	.	ID=gene-rev;Name=rev;gbkey=Gene;gene=rev;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	6784	6853	.	+	0	ID=cds-AAA47631.1;Parent=gene-rev;Dbxref=NCBI_GP:AAA47631.1;Name=AAA47631.1;gbkey=CDS;gene=rev;product=rev protein;protein_id=AAA47631.1
+M33262.1	Genbank	CDS	9062	9315	.	+	2	ID=cds-AAA47631.1;Parent=gene-rev;Dbxref=NCBI_GP:AAA47631.1;Name=AAA47631.1;gbkey=CDS;gene=rev;product=rev protein;protein_id=AAA47631.1
+M33262.1	Genbank	exon	6784	6853	.	+	.	ID=id-rev-2;Parent=gene-rev;Note=rev protein%2C  (first expressed exon);exon_number=2;gbkey=exon;gene=rev;number=2
+M33262.1	Genbank	exon	9062	9315	.	+	.	ID=id-rev-3;Parent=gene-rev;Note=rev protein;exon_number=3;gbkey=exon;gene=rev;number=3
+M33262.1	Genbank	exon	9062	9158	.	+	.	ID=id-rev-3-2;Parent=gene-rev;Note=tat protein;exon_number=3;gbkey=exon;gene=rev;number=3
+M33262.1	Genbank	gene	6860	9499	.	+	.	ID=gene-env;Name=env;gbkey=Gene;gene=env;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	6860	9499	.	+	0	ID=cds-AAA47637.1;Parent=gene-env;Dbxref=NCBI_GP:AAA47637.1;Name=AAA47637.1;gbkey=CDS;gene=env;product=env polyprotein;protein_id=AAA47637.1
+M33262.1	Genbank	gene	9333	10124	.	+	.	ID=gene-nef;Name=nef;gbkey=Gene;gene=nef;gene_biotype=protein_coding
+M33262.1	Genbank	CDS	9333	10124	.	+	0	ID=cds-nef;Parent=gene-nef;Note=nef protein (in-frame stop at 9612);gbkey=CDS;gene=nef;pseudo=true
+M33262.1	Genbank	CDS	9333	9611	.	+	0	ID=cds-AAA47638.1;Parent=gene-nef;Dbxref=NCBI_GP:AAA47638.1;Name=AAA47638.1;gbkey=CDS;gene=nef;product=nef protein (premature termination);protein_id=AAA47638.1;pseudo=true
+M33262.1	Genbank	sequence_feature	9701	9716	.	+	.	ID=id-nef;Note=polypurine tract;gbkey=misc_feature;gene=nef;pseudo=true
+M33262.1	Genbank	long_terminal_repeat	9718	10535	.	+	.	ID=id-M33262.1:9718..10535;Note=3' LTR;gbkey=LTR
+M33262.1	Genbank	long_terminal_repeat	9718	10234	.	+	.	ID=id-M33262.1:9718..10234;Note=U3;gbkey=LTR
+M33262.1	Genbank	repeat_region	10235	10411	.	+	.	ID=id-M33262.1:10235..10411;Note=R;gbkey=repeat_region
+M33262.1	Genbank	region	10388	10393	.	+	.	ID=id-M33262.1:10388..10393;gbkey=polyA_signal
+M33262.1	Genbank	long_terminal_repeat	10412	10535	.	+	.	ID=id-M33262.1:10412..10535;Note=U5;gbkey=LTR
