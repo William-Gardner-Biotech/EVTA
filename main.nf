@@ -22,12 +22,6 @@ workflow {
         .fromFilePairs ( "${params.fastq_dir}/*{R1,R2}*.fastq.gz", size:2 )
         //.view()
 
-    ch_samples = Channel
-        .fromPath ( params.pair_file )
-        .splitCsv ( header:true, strip:true )
-        .map { row -> tuple(row.specimen, row.timepoint1, row.timepoint2) }
-        //.view()
-
     MERGE (
         ch_fastqs_raw
     )
@@ -50,6 +44,7 @@ workflow {
         ASSEMBLE_INOC.out
     )
 
+    // Add error strategy
     LIFT_GFF (
         GENERATE_T1_CONSENSUS.out.t2_vs_t1
     )
@@ -139,6 +134,9 @@ process LIFT_GFF_to_INOC {
     output:
     path "INOC.gff3"
 
+    errorStrategy 'retry'
+    maxRetries 2
+
     script:
 
     """
@@ -191,6 +189,9 @@ process LIFT_GFF {
     publishDir "GFF_lift", mode: 'Copy'
 
     tag "${specimen}"
+
+    errorStrategy 'retry'
+    maxRetries 2
 
     input:
     tuple val(specimen), path(timepoint_2), path(t1_Consensus)
@@ -281,7 +282,9 @@ process CALL_VARIANTS {
     script:
     """
     samtools sort -o sorted_${callable_bam} -l 1 ${callable_bam}
-    samtools mpileup sorted_${callable_bam} | ivar variants -r ${t1_Consensus} -p ${specimen} -g ${consensus_gff} -m 10
+    # mpileup -B retains read quality
+    # ivar variants -m = depth, -t = frequency threshold, -q = read quality score to be counted
+    samtools mpileup -B sorted_${callable_bam} | ivar variants -r ${t1_Consensus} -p ${specimen} -g ${consensus_gff} -m 400 -t 0.005 -q 30
     """
 }
 
@@ -330,7 +333,7 @@ process MAP_FIRST_TIMEPOINT_VS_INOC {
     bedtools subtract -a ${specimen}_t1_full.bam -b between_vpr_vpx.bed -A > ${specimen}_t1_vcf_callable.bam 
 
     samtools sort -o sorted_t1_${specimen}.bam -l 1 ${specimen}_t1_vcf_callable.bam
-    samtools mpileup sorted_t1_${specimen}.bam | ivar variants -r ${inoc_consensus} -p ${specimen}_t1 -g ${inoc_gff} -m 50
+    samtools mpileup sorted_t1_${specimen}.bam | ivar variants -r ${inoc_consensus} -p ${specimen}_t1 -g ${inoc_gff} -m 100
     """
 
     // vpr-vpx gene region is specific to barcoded SIVmac239M, it should run just fine on other viral strains as the awk
