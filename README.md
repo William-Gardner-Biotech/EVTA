@@ -23,18 +23,22 @@ Optional: Barcode region from SIVmac239M is removed using bedtools. This can be 
 
 This repository contains sample data and sample output files to demonstrate the pipeline's functionality. To run the pipeline on your own data, follow these steps:
 
-1. Clone the repository: `git clone https://github.com/your-repo/EVTA.git`
-2. Download requirements or use Docker image (still being built).
-3. Place your paired-end sequencing files (FASTQs) in the `data/` directory.
-4. Configure your paths and settings in nextflow.config
-5. Run the main.nf program
+1. Clone the repository
+2. Configure the Docker image
+3. Place your paired-end sequencing files (FASTQs) in the `data/` directory
+4. Mount volumes to Docker container
+5. Configure your paths and settings in nextflow.config
+6. Run the main.nf program
 
 The pipeline will process your data, and the output files will be generated in the configured results directory.
 
-## Requirements
+## Docker image:
 
-- Docker (A Dockerfile will be provided in the future releases)
-- Required software dependencies (to be listed)
+  ```docker build -t evta .```
+
+OR
+
+  ```docker pull willgardnerbiotech/evta_1.0```
 
 ## Contributing
 
