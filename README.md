@@ -34,11 +34,15 @@ The pipeline will process your data, and the output files will be generated in t
 
 ## Docker image:
 
-  ```docker build -t evta .```
+```
+docker build -t evta .
+```
 
 OR
 
-  ```docker pull willgardnerbiotech/evta_1.0```
+```
+docker pull willgardnerbiotech/evta_1.0
+```
 
 ## Contributing
 
