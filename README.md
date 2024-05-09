@@ -1,5 +1,7 @@
 # EVTA (Evolutionary Variant Timepoint Analysis)
 
+[![Docker Image CI](https://github.com/William-Gardner-Biotech/EVTA/actions/workflows/docker-image.yml/badge.svg)](https://github.com/William-Gardner-Biotech/EVTA/actions/workflows/docker-image.yml)
+
 EVTA is a bioinformatics pipeline for analyzing evolutionary changes in genomic variants across time intervals. It takes paired-end sequencing files (FASTQ) from two timepoints and uses the first timepoint as a reference to identify mutations that have occurred between the timespan.
 
 ## Overview
