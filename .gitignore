@@ -19,6 +19,12 @@ T1_Consensus
 T2_BAMs
 bkup_data
 
+# Ignore real data files
+all_cynos
+7933_daata
+subworkflows/Epitopes/data
+subworkflows/Epitopes/ref
+
 # Ignore git files
 github
 
@@ -26,7 +32,11 @@ github
 ref/
 !ref/SIVmac239*
 !ref/amp3_primers.fa
+Epitopes_only_gff
 
 # Include nextflow script files
 !main.nf
 !nextflow.config
+
+# Ignore Docker stuff
+docker-image.yaml
