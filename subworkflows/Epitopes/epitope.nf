@@ -112,7 +112,7 @@ process MAP_READS_ON_SIV {
     script:
     """
 
-    # Map the first timepoint reads against inoc consensus
+    # QC then map the reads onto our reference
     bbduk.sh -Xmx8g in=${merged_reads} out=QC_${merged_reads} minlen=100 hdist=2 ftm=5 maq=10
     bbmap.sh -Xmx8g ref=${ref_seq} in=QC_${merged_reads} out=${specimen}_mapped.bam maxindel=100 minid=0.9
 
@@ -141,6 +141,7 @@ process MAP_READS_ON_SIV {
     """
 }
 
+// TODO make this automated
 process EXTRACT_EPITOPES {
 
     publishDir "Epitopes_only_gff", mode: 'symlink'
@@ -168,7 +169,7 @@ process EXTRACT_EPITOPES {
 
 process SPECIALIZED_VARIANT_CALL {
 
-    tag "${specimen} using a -t=${threshold}"
+    tag "Variant calling: ${specimen} using a -t=${threshold}"
 
     publishDir "Variant_calls", mode: 'Copy'
 
@@ -181,7 +182,8 @@ process SPECIALIZED_VARIANT_CALL {
 
     script:
     """
-    # ivar -m is min depth, -t is varaint threshold, -r ref seq, -p is prefix for output file
+    # ivar -m is min depth, -t is variant threshold, -r ref seq, -p is prefix for output file
     samtools mpileup -f ${params.ref_fasta} ${sorted_bam} | ivar variants -r ${params.ref_fasta} -p ${specimen} -g ${params.ref_GFF} -m 100 -t ${threshold}
+
     """
 }

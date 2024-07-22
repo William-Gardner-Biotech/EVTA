@@ -24,6 +24,8 @@ all_cynos
 7933_daata
 subworkflows/Epitopes/data
 subworkflows/Epitopes/ref
+subworkflows/Epitopes/Sorted_n_Mapped_BAMs
+subworkflows/Epitopes/Variant_calls
 
 # Ignore git files
 github
