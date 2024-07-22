@@ -60,7 +60,7 @@ workflow {
     // Create a new channel with BAM files and their corresponding thresholds
     ch_bam_with_threshold = MAP_READS_ON_SIV.out.map { specimen, bam ->
         // thresholds is a dictionary which we are now indexing
-        def threshold = thresholds[specimen] ?: '0.05'  // Default to 0.05 if not found
+        def threshold = thresholds[specimen] ?: params.freq_th  // Default to frequency threshold if not found
         tuple(specimen, bam, threshold)
     }
 
